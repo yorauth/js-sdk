@@ -637,6 +637,36 @@ describe('HttpClient', () => {
 
       expect(url).toBe('https://api.yorauth.dev/.well-known/openid-configuration');
     });
+
+    it('should avoid duplicate /api when baseUrl already includes /api', () => {
+      const http = new HttpClient({
+        baseUrl: 'https://api.yorauth.dev/api',
+        applicationId: 'test-app-id',
+        timeout: 5000,
+        getToken: () => undefined,
+        getApiKey: () => undefined,
+        getRefreshToken: () => undefined,
+        onRefreshSuccess: () => {},
+      });
+
+      const url = http.buildRootUrl('api/oidc/authorize');
+      expect(url).toBe('https://api.yorauth.dev/api/oidc/authorize');
+    });
+
+    it('should return baseUrl when root path is api and baseUrl already ends with /api', () => {
+      const http = new HttpClient({
+        baseUrl: 'https://api.yorauth.dev/api',
+        applicationId: 'test-app-id',
+        timeout: 5000,
+        getToken: () => undefined,
+        getApiKey: () => undefined,
+        getRefreshToken: () => undefined,
+        onRefreshSuccess: () => {},
+      });
+
+      const url = http.buildRootUrl('api');
+      expect(url).toBe('https://api.yorauth.dev/api');
+    });
   });
 
   describe('network errors', () => {

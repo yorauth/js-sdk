@@ -7,6 +7,7 @@ import { OidcResource } from "./resources/oidc.js";
 import { PermissionsResource } from "./resources/permissions.js";
 import { RoleResource } from "./resources/roles.js";
 import { SessionResource } from "./resources/sessions.js";
+import { TeamResource } from "./resources/teams.js";
 import { UserResource } from "./resources/users.js";
 import { WebhookResource } from "./resources/webhooks.js";
 import type { YorAuthConfig, TokenRefreshResult } from "./types.js";
@@ -20,7 +21,7 @@ import type { YorAuthConfig, TokenRefreshResult } from "./types.js";
  *
  * @example
  * ```ts
- * import { YorAuth } from "@yorauth/sdk";
+ * import { YorAuth } from "@yorauth/js-sdk";
  *
  * const yorauth = new YorAuth({
  *   applicationId: "your-app-uuid",
@@ -67,6 +68,9 @@ export class YorAuth {
 
   /** API key management. */
   public readonly apiKeys: ApiKeyResource;
+
+  /** Team management (CRUD, members, roles). */
+  public readonly teams: TeamResource;
 
   /** Authorization audit log viewing. */
   public readonly auditLogs: AuditLogResource;
@@ -115,6 +119,7 @@ export class YorAuth {
     this.oidc = new OidcResource(this.http);
     this.webhooks = new WebhookResource(this.http);
     this.apiKeys = new ApiKeyResource(this.http);
+    this.teams = new TeamResource(this.http);
     this.auditLogs = new AuditLogResource(this.http);
   }
 

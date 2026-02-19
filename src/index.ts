@@ -1,11 +1,11 @@
 /**
- * @module @yorauth/sdk
+ * @module @yorauth/js-sdk
  *
  * Official TypeScript SDK for the YorAuth Authentication & Authorization Platform.
  *
  * @example
  * ```ts
- * import { YorAuth } from "@yorauth/sdk";
+ * import { YorAuth } from "@yorauth/js-sdk";
  *
  * const client = new YorAuth({ applicationId: "your-app-uuid" });
  * ```
@@ -32,6 +32,7 @@ export type {
 
   // Auth
   AuthResponse,
+  MfaChallengeMethod,
   MfaChallengeResponse,
   RegisterData,
   RegisterResponse,
@@ -80,6 +81,8 @@ export type {
   UpdateOidcClientData,
   OidcAuthorizeParams,
   OidcAuthorizeResponse,
+  OidcAuthorizationCodeTokenParams,
+  OidcRefreshTokenParams,
   OidcTokenParams,
   OidcTokenResponse,
   OidcUserInfo,
@@ -99,6 +102,18 @@ export type {
   // Audit Logs
   AuditLog,
   AuditLogFilters,
+
+  // Teams
+  Team,
+  TeamDetail,
+  CreateTeamData,
+  UpdateTeamData,
+  TeamMember,
+  AddTeamMemberData,
+  TeamRoleAssignment,
+  AssignTeamRoleData,
+  UserTeam,
+  ListTeamsParams,
 } from "./types.js";
 
 // Resource classes (for advanced usage / extension)
@@ -112,3 +127,4 @@ export { OidcResource } from "./resources/oidc.js";
 export { WebhookResource } from "./resources/webhooks.js";
 export { ApiKeyResource } from "./resources/api-keys.js";
 export { AuditLogResource } from "./resources/audit-logs.js";
+export { TeamResource } from "./resources/teams.js";

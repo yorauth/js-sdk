@@ -11,7 +11,7 @@ import type { WebhookEvent } from "./types.js";
  *
  * @example
  * ```ts
- * import { Webhook } from "@yorauth/sdk";
+ * import { Webhook } from "@yorauth/js-sdk";
  *
  * // In your webhook handler (Express, Fastify, etc.)
  * const payload = req.body; // raw string body

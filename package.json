@@ -1,6 +1,6 @@
 {
   "name": "@yorauth/js-sdk",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Official TypeScript SDK for the YorAuth Authentication & Authorization Platform",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -21,6 +21,7 @@
   "files": [
     "dist",
     "README.md",
+    "CHANGELOG.md",
     "LICENSE"
   ],
   "sideEffects": false,
@@ -52,7 +53,12 @@
   "engines": {
     "node": ">=18.0.0"
   },
+  "homepage": "https://github.com/yorauth/yorauth-js#readme",
+  "bugs": {
+    "url": "https://github.com/yorauth/yorauth-js/issues"
+  },
   "devDependencies": {
+    "@types/node": "^20.0.0",
     "tsup": "^8.0.0",
     "typescript": "^5.4.0",
     "vitest": "^2.0.0"

@@ -1,4 +1,4 @@
-# @yorauth/sdk
+# @yorauth/js-sdk
 
 Official TypeScript SDK for the **YorAuth Authentication & Authorization Platform**.
 
@@ -15,7 +15,7 @@ Requires Node.js 18+ (for native `fetch` support) or a browser environment.
 ## Quick Start
 
 ```typescript
-import { YorAuth } from "@yorauth/sdk";
+import { YorAuth } from "@yorauth/js-sdk";
 
 // Initialize the client with your application ID
 const yorauth = new YorAuth({
@@ -220,6 +220,50 @@ const perms = await yorauth.roles.getUserPermissions("user-uuid");
 console.log(perms.permissions); // ["posts:create", "posts:read", ...]
 ```
 
+### `yorauth.teams` -- Team Management
+
+Requires JWT authentication.
+
+```typescript
+// List teams (paginated)
+const teams = await yorauth.teams.list({ search: "engineering", per_page: 20 });
+
+// Create team
+const team = await yorauth.teams.create({
+  name: "Engineering",
+  description: "Engineering team",
+  scope: "org:acme",
+  metadata: { department: "tech" },
+});
+
+// Get team (includes members and roles)
+const detail = await yorauth.teams.get("team-uuid");
+console.log(detail.members, detail.roles);
+
+// Update team
+await yorauth.teams.update("team-uuid", { name: "Platform Engineering" });
+
+// Delete team
+await yorauth.teams.delete("team-uuid");
+
+// Member management
+const members = await yorauth.teams.getMembers("team-uuid");
+await yorauth.teams.addMember("team-uuid", { user_id: "user-uuid" });
+await yorauth.teams.removeMember("team-uuid", "user-uuid");
+
+// Team role assignments
+const roles = await yorauth.teams.getTeamRoles("team-uuid");
+await yorauth.teams.assignTeamRole("team-uuid", {
+  role_id: "role-uuid",
+  scope: "project:abc",       // optional
+  expires_at: "2027-01-01",   // optional
+});
+await yorauth.teams.removeTeamRole("team-uuid", "role-uuid");
+
+// Get all teams for a user
+const userTeams = await yorauth.teams.getUserTeams("user-uuid");
+```
+
 ### `yorauth.permissions` -- Authorization Checks
 
 Requires JWT authentication.
@@ -404,7 +448,7 @@ const userEvents = await yorauth.auditLogs.list({
 All API errors throw a `YorAuthError` with structured information:
 
 ```typescript
-import { YorAuth, YorAuthError } from "@yorauth/sdk";
+import { YorAuth, YorAuthError } from "@yorauth/js-sdk";
 
 try {
   await yorauth.auth.login({
@@ -454,7 +498,7 @@ import type {
   OidcClient,
   WebhookConfig,
   AuditLog,
-} from "@yorauth/sdk";
+} from "@yorauth/js-sdk";
 ```
 
 ## Configuration

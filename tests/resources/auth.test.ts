@@ -127,7 +127,7 @@ describe('AuthResource', () => {
         data: {
           mfa_required: true,
           challenge_token: 'challenge-abc',
-          mfa_methods: ['totp'],
+          mfa_methods: [{ id: 'method-1', type: 'totp', label: 'Authenticator App' }],
         },
       };
 

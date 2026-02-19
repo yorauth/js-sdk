@@ -114,7 +114,7 @@ export class OidcResource {
   async getDiscovery(): Promise<Record<string, unknown>> {
     return this.http.request<Record<string, unknown>>(
       "GET",
-      this.http.buildRootUrl(".well-known/openid-configuration"),
+      this.http.buildRootUrl("api/.well-known/openid-configuration"),
     );
   }
 
@@ -128,7 +128,7 @@ export class OidcResource {
   async getJwks(): Promise<Record<string, unknown>> {
     return this.http.request<Record<string, unknown>>(
       "GET",
-      this.http.buildRootUrl(".well-known/jwks.json"),
+      this.http.buildRootUrl("api/.well-known/jwks.json"),
     );
   }
 
@@ -144,7 +144,7 @@ export class OidcResource {
   async authorize(params: OidcAuthorizeParams): Promise<OidcAuthorizeResponse> {
     return this.http.request<OidcAuthorizeResponse>(
       "GET",
-      this.http.buildRootUrl("oidc/authorize"),
+      this.http.buildRootUrl("api/oidc/authorize"),
       {
         params: params as unknown as Record<string, string>,
       },
@@ -162,7 +162,7 @@ export class OidcResource {
   async exchangeToken(params: OidcTokenParams): Promise<OidcTokenResponse> {
     return this.http.request<OidcTokenResponse>(
       "POST",
-      this.http.buildRootUrl("oidc/token"),
+      this.http.buildRootUrl("api/oidc/token"),
       { body: params },
     );
   }
@@ -178,7 +178,7 @@ export class OidcResource {
   async getUserInfo(scopes?: string): Promise<OidcUserInfo> {
     return this.http.request<OidcUserInfo>(
       "GET",
-      this.http.buildRootUrl("oidc/userinfo"),
+      this.http.buildRootUrl("api/oidc/userinfo"),
       {
         params: scopes ? { scopes } : undefined,
       },

@@ -70,17 +70,25 @@ export interface AuthResponse {
   user: AppUser;
 }
 
+/** MFA method summary returned during an authentication challenge. */
+export interface MfaChallengeMethod {
+  id: string;
+  type: string;
+  label: string | null;
+}
+
 /** Response returned when MFA is required during login. */
 export interface MfaChallengeResponse {
   mfa_required: true;
   challenge_token: string;
-  mfa_methods: string[];
+  mfa_methods: MfaChallengeMethod[];
 }
 
 /** Data required to register a new user. */
 export interface RegisterData {
   email: string;
   password: string;
+  password_confirmation?: string;
   name: string;
   metadata?: Record<string, unknown>;
 }
@@ -453,8 +461,8 @@ export interface OidcAuthorizeResponse {
   redirect_uri: string;
 }
 
-/** Parameters for the OIDC token exchange. */
-export interface OidcTokenParams {
+/** Parameters for an OIDC authorization_code token exchange. */
+export interface OidcAuthorizationCodeTokenParams {
   grant_type: "authorization_code";
   code: string;
   redirect_uri: string;
@@ -463,9 +471,23 @@ export interface OidcTokenParams {
   code_verifier?: string;
 }
 
+/** Parameters for an OIDC refresh_token exchange. */
+export interface OidcRefreshTokenParams {
+  grant_type: "refresh_token";
+  refresh_token: string;
+  client_id: string;
+  client_secret: string;
+}
+
+/** Parameters for the OIDC token endpoint. */
+export type OidcTokenParams =
+  | OidcAuthorizationCodeTokenParams
+  | OidcRefreshTokenParams;
+
 /** Response from the OIDC token endpoint. */
 export interface OidcTokenResponse {
-  access_token: string;
+  access_token?: string;
+  refresh_token?: string;
   token_type: string;
   expires_in: number;
   id_token: string;
@@ -480,6 +502,97 @@ export interface OidcUserInfo {
   picture?: string;
   updated_at?: number;
   [key: string]: unknown;
+}
+
+// ---------------------------------------------------------------------------
+// Teams
+// ---------------------------------------------------------------------------
+
+/** A team within an application. */
+export interface Team {
+  id: string;
+  name: string;
+  description: string | null;
+  scope: string | null;
+  metadata: Record<string, unknown> | null;
+  member_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+/** A team with its members and roles included. */
+export interface TeamDetail extends Team {
+  members: TeamMember[];
+  roles: TeamRoleAssignment[];
+}
+
+/** Data required to create a new team. */
+export interface CreateTeamData {
+  name: string;
+  description?: string;
+  scope?: string;
+  metadata?: Record<string, unknown>;
+}
+
+/** Data used to update an existing team. */
+export interface UpdateTeamData {
+  name?: string;
+  description?: string;
+  scope?: string;
+  metadata?: Record<string, unknown>;
+}
+
+/** A team member record. */
+export interface TeamMember {
+  id: string;
+  user_id: string;
+  added_by: string | null;
+  created_at: string;
+}
+
+/** Data required to add a member to a team. */
+export interface AddTeamMemberData {
+  user_id: string;
+}
+
+/** A role assignment on a team. */
+export interface TeamRoleAssignment {
+  id: string;
+  role: {
+    id: string;
+    name: string;
+    display_name: string | null;
+  };
+  scope: string | null;
+  granted_at: string;
+  expires_at: string | null;
+}
+
+/** Data required to assign a role to a team. */
+export interface AssignTeamRoleData {
+  role_id: string;
+  scope?: string;
+  expires_at?: string;
+}
+
+/** A user's team membership with role information. */
+export interface UserTeam {
+  id: string;
+  name: string;
+  description: string | null;
+  scope: string | null;
+  roles: Array<{
+    role_id: string;
+    role_name: string;
+    scope: string | null;
+  }>;
+}
+
+/** Query parameters for listing teams. */
+export interface ListTeamsParams {
+  search?: string;
+  per_page?: number;
+  page?: number;
 }
 
 // ---------------------------------------------------------------------------

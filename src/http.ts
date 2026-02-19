@@ -81,6 +81,19 @@ export class HttpClient {
    */
   buildRootUrl(path: string): string {
     const cleanPath = path.replace(/^\/+/, "");
+    if (cleanPath.length === 0) {
+      return this.baseUrl;
+    }
+
+    // Allow callers to pass `api/...` paths regardless of whether baseUrl
+    // already includes `/api` as its suffix.
+    if (cleanPath === "api" && this.baseUrl.endsWith("/api")) {
+      return this.baseUrl;
+    }
+    if (cleanPath.startsWith("api/") && this.baseUrl.endsWith("/api")) {
+      return `${this.baseUrl}/${cleanPath.slice(4)}`;
+    }
+
     return `${this.baseUrl}/${cleanPath}`;
   }
 
