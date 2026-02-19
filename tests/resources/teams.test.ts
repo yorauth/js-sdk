@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { TeamResource } from '../../src/resources/teams.js';
-import { createMockHttpClient, mockFetchResponse, mock204Response } from '../helpers.js';
+import { createMockHttpClient, mockFetchResponse, mockErrorResponse, mock204Response } from '../helpers.js';
 
 describe('TeamResource', () => {
   let mockFetch: ReturnType<typeof vi.fn>;
