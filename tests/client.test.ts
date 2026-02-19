@@ -9,6 +9,7 @@ import { PermissionsResource } from '../src/resources/permissions.js';
 import { RoleResource } from '../src/resources/roles.js';
 import { SessionResource } from '../src/resources/sessions.js';
 import { UserResource } from '../src/resources/users.js';
+import { TeamResource } from '../src/resources/teams.js';
 import { WebhookResource } from '../src/resources/webhooks.js';
 
 describe('YorAuth Client', () => {
@@ -179,6 +180,11 @@ describe('YorAuth Client', () => {
     it('should expose apiKeys resource', () => {
       const client = new YorAuth({ applicationId: 'test-app-id' });
       expect(client.apiKeys).toBeInstanceOf(ApiKeyResource);
+    });
+
+    it('should expose teams resource', () => {
+      const client = new YorAuth({ applicationId: 'test-app-id' });
+      expect(client.teams).toBeInstanceOf(TeamResource);
     });
 
     it('should expose auditLogs resource', () => {
