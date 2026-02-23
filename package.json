@@ -1,6 +1,6 @@
 {
   "name": "@yorauth/js-sdk",
-  "version": "1.0.0",
+  "version": "1.0.0-alpha.0",
   "description": "Official TypeScript SDK for the YorAuth Authentication & Authorization Platform",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -46,6 +46,7 @@
   ],
   "author": "YorAuth Team",
   "license": "MIT",
+  "publishConfig": { "access": "public" },
   "repository": {
     "type": "git",
     "url": "https://github.com/yorauth/yorauth-js"

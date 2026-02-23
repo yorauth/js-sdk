@@ -279,4 +279,42 @@ describe('TeamResource', () => {
       expect(result).toEqual([]);
     });
   });
+
+  describe('error handling', () => {
+    it('should throw on team not found', async () => {
+      mockFetch.mockResolvedValueOnce(
+        mockErrorResponse('Team not found', 'NOT_FOUND', 404)
+      );
+
+      await expect(teams.get('nonexistent')).rejects.toThrow();
+    });
+
+    it('should throw on create validation error', async () => {
+      mockFetch.mockResolvedValueOnce(
+        mockErrorResponse('Validation failed', 'VALIDATION_ERROR', 422)
+      );
+
+      await expect(
+        teams.create({ name: '' })
+      ).rejects.toThrow();
+    });
+
+    it('should throw on duplicate member', async () => {
+      mockFetch.mockResolvedValueOnce(
+        mockErrorResponse('User is already a member', 'CONFLICT', 409)
+      );
+
+      await expect(
+        teams.addMember('team-123', { user_id: 'user-1' })
+      ).rejects.toThrow();
+    });
+
+    it('should throw on unauthorized access', async () => {
+      mockFetch.mockResolvedValueOnce(
+        mockErrorResponse('Forbidden', 'FORBIDDEN', 403)
+      );
+
+      await expect(teams.delete('team-123')).rejects.toThrow();
+    });
+  });
 });
