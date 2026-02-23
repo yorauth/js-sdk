@@ -58,6 +58,9 @@
   "bugs": {
     "url": "https://github.com/yorauth/yorauth-js/issues"
   },
+  "overrides": {
+    "rollup": "npm:@rollup/wasm-node"
+  },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "tsup": "^8.0.0",
