@@ -49,14 +49,14 @@
   "publishConfig": { "access": "public" },
   "repository": {
     "type": "git",
-    "url": "https://github.com/yorauth/yorauth-js"
+    "url": "https://github.com/yorauth/js-sdk"
   },
   "engines": {
     "node": ">=18.0.0"
   },
-  "homepage": "https://github.com/yorauth/yorauth-js#readme",
+  "homepage": "https://github.com/yorauth/js-sdk#readme",
   "bugs": {
-    "url": "https://github.com/yorauth/yorauth-js/issues"
+    "url": "https://github.com/yorauth/js-sdk/issues"
   },
   "overrides": {
     "rollup": "npm:@rollup/wasm-node"
