@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Security
+
+- Added SECURITY.md with responsible disclosure policy and credential management guidance
+- Added runtime browser environment detection -- throws an error when API key authentication is used in a browser context
+- Added `dangerouslyAllowBrowser` configuration option for legitimate server-side rendering contexts
+- Added JSDoc `@security` annotations to all methods that handle sensitive credentials
+- Added security disclaimers and warnings to README for credential exposure prevention
+- Updated package.json description to signal server-side-only usage
+
 ## [1.0.0] - 2026-02-17
 
 ### Added

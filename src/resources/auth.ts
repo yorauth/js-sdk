@@ -1,6 +1,7 @@
 import type { HttpClient } from "../http.js";
 import type {
   AuthResponse,
+  CaptchaStatus,
   LoginData,
   MfaChallengeResponse,
   MfaVerifyData,
@@ -227,6 +228,30 @@ export class AuthResource {
       "POST",
       this.http.buildAppUrl("users/mfa/verify"),
       { body: data },
+    );
+    return response.data;
+  }
+
+  /**
+   * Get the CAPTCHA configuration status for the application.
+   *
+   * Returns whether CAPTCHA is enabled and which provider/site key
+   * to use for client-side widget rendering.
+   *
+   * @returns CAPTCHA status including provider and site key.
+   *
+   * @example
+   * ```ts
+   * const status = await yorauth.auth.getCaptchaStatus();
+   * if (status.enabled) {
+   *   // Render CAPTCHA widget using status.provider and status.site_key
+   * }
+   * ```
+   */
+  async getCaptchaStatus(): Promise<CaptchaStatus> {
+    const response = await this.http.request<{ data: CaptchaStatus }>(
+      "GET",
+      this.http.buildAppUrl("captcha/status"),
     );
     return response.data;
   }

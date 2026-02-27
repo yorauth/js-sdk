@@ -42,7 +42,16 @@ export class WebhookResource {
    * The response includes the webhook `secret` in plaintext.
    * Store it securely to verify incoming webhook signatures.
    *
-   * Valid events: `user.created`, `user.login`, `role.assigned`, `role.removed`.
+   * @security Store the returned webhook secret securely for signature verification. It cannot be retrieved later.
+   *
+   * Valid events:
+   * `user.created`, `user.login`, `user.updated`, `user.deleted`,
+   * `role.assigned`, `role.removed`, `role.created`, `role.updated`, `role.deleted`,
+   * `permission.granted`, `permission.revoked`,
+   * `connection.created`, `connection.refreshed`, `connection.failed`, `connection.revoked`,
+   * `consent.granted`, `mfa.enabled`, `mfa.disabled`,
+   * `policy.created`, `policy.updated`, `policy.deleted`,
+   * `attribute.set`, `attribute.deleted`.
    *
    * @param data - Webhook URL and subscribed events.
    * @returns The created webhook including the signing secret.

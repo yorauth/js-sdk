@@ -4,10 +4,13 @@ import { AuditLogResource } from "./resources/audit-logs.js";
 import { AuthResource } from "./resources/auth.js";
 import { MfaResource } from "./resources/mfa.js";
 import { OidcResource } from "./resources/oidc.js";
+import { PasskeyResource } from "./resources/passkeys.js";
 import { PermissionsResource } from "./resources/permissions.js";
 import { RoleResource } from "./resources/roles.js";
+import { SamlResource } from "./resources/saml.js";
 import { SessionResource } from "./resources/sessions.js";
 import { TeamResource } from "./resources/teams.js";
+import { UserAttributeResource } from "./resources/user-attributes.js";
 import { UserResource } from "./resources/users.js";
 import { WebhookResource } from "./resources/webhooks.js";
 import type { YorAuthConfig, TokenRefreshResult } from "./types.js";
@@ -25,7 +28,7 @@ import type { YorAuthConfig, TokenRefreshResult } from "./types.js";
  *
  * const yorauth = new YorAuth({
  *   applicationId: "your-app-uuid",
- *   baseUrl: "https://api.yorauth.dev",
+ *   baseUrl: process.env.YORAUTH_BASE_URL!,
  * });
  *
  * // Public endpoints (no auth)
@@ -75,6 +78,15 @@ export class YorAuth {
   /** Authorization audit log viewing. */
   public readonly auditLogs: AuditLogResource;
 
+  /** Passkey (WebAuthn) authentication and credential management. */
+  public readonly passkeys: PasskeyResource;
+
+  /** SAML SSO initiation and connection listing. */
+  public readonly saml: SamlResource;
+
+  /** User attribute management for ABAC. */
+  public readonly userAttributes: UserAttributeResource;
+
   private token: string | undefined;
   private apiKey: string | undefined;
   private refreshToken: string | undefined;
@@ -91,12 +103,43 @@ export class YorAuth {
       throw new Error("YorAuth: applicationId is required");
     }
 
+    if (!config.baseUrl) {
+      throw new Error(
+        "YorAuth: baseUrl is required. YorAuth supports custom domains and whitelabeling, " +
+        "so there is no default base URL. Pass your API base URL explicitly, " +
+        "e.g. baseUrl: process.env.YORAUTH_BASE_URL",
+      );
+    }
+
+    if (config.apiKey && !config.dangerouslyAllowBrowser) {
+      const g = globalThis as Record<string, unknown>;
+      const isBrowser =
+        typeof g["window"] !== "undefined" &&
+        typeof g["document"] !== "undefined";
+
+      if (isBrowser) {
+        throw new Error(
+          "YorAuth SECURITY ERROR: API key authentication detected in a browser environment. " +
+          "API keys are server-side credentials that must NEVER be exposed in client-side code. " +
+          "Exposing your API key allows anyone to access your YorAuth application data.\n\n" +
+          "To fix this:\n" +
+          "- Use @yorauth/vue-sdk (Nuxt.js) or @yorauth/react-sdk (Next.js) for frontend apps\n" +
+          "- Use the OIDC Authorization Code flow with PKCE for client-side authentication\n" +
+          "- Move API key usage to a server-side API route or backend service\n\n" +
+          "See: https://docs.yorauth.com/security-best-practices\n\n" +
+          "If you understand the risks and are running in a server-side environment that\n" +
+          "has browser globals (e.g., Electron, SSR hydration), you can set\n" +
+          "`dangerouslyAllowBrowser: true` in the configuration.",
+        );
+      }
+    }
+
     this.token = config.token;
     this.apiKey = config.apiKey;
     this.refreshToken = config.refreshToken;
 
     this.http = new HttpClient({
-      baseUrl: config.baseUrl ?? "https://api.yorauth.dev",
+      baseUrl: config.baseUrl,
       applicationId: config.applicationId,
       timeout: config.timeout ?? 30_000,
       getToken: () => this.token,
@@ -121,6 +164,9 @@ export class YorAuth {
     this.apiKeys = new ApiKeyResource(this.http);
     this.teams = new TeamResource(this.http);
     this.auditLogs = new AuditLogResource(this.http);
+    this.passkeys = new PasskeyResource(this.http);
+    this.saml = new SamlResource(this.http);
+    this.userAttributes = new UserAttributeResource(this.http);
   }
 
   /**
@@ -146,6 +192,11 @@ export class YorAuth {
 
   /**
    * Set the API key for authenticated requests.
+   *
+   * @security **SERVER-SIDE ONLY.** API keys must never be used in browser or
+   * client-side environments. Doing so exposes the key to end users and
+   * compromises application security. YorAuth assumes no liability for
+   * credential exposure in client-side environments.
    *
    * API key authentication is an alternative to JWT Bearer tokens.
    * If both a token and API key are set, the JWT token takes priority.

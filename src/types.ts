@@ -6,16 +6,44 @@
 export interface YorAuthConfig {
   /** The application UUID that scopes all API requests. */
   applicationId: string;
-  /** Base URL of the YorAuth API. Defaults to `"https://api.yorauth.dev"`. */
-  baseUrl?: string;
+  /** Base URL of the YorAuth API (required, no default). */
+  baseUrl: string;
   /** JWT Bearer token used for authenticated requests. */
   token?: string;
-  /** API key used as an alternative authentication method (sent as `X-API-Key`). */
+  /**
+   * API key for server-to-server authentication.
+   *
+   * @security **SERVER-SIDE ONLY.** API keys are long-lived credentials with full
+   * application access. NEVER use API keys in browser, frontend, or client-side
+   * environments. Exposing an API key in client-side code will compromise your
+   * application security. For client-side auth, use the OIDC Authorization Code
+   * flow with PKCE instead.
+   *
+   * Load from environment variables: `process.env.YORAUTH_API_KEY`
+   *
+   * The SDK will throw an error if an API key is detected in a browser
+   * environment. To override this check for legitimate server-side rendering
+   * contexts, set {@link dangerouslyAllowBrowser} to `true`.
+   */
   apiKey?: string;
   /** Refresh token for automatic token refresh on 401. */
   refreshToken?: string;
   /** Request timeout in milliseconds. Defaults to `30000`. */
   timeout?: number;
+  /**
+   * Override the browser environment detection safety check.
+   *
+   * @security Setting this to `true` disables the runtime check that prevents
+   * API key usage in browser environments. Only use this if you are certain
+   * your code runs in a server-side context that happens to have browser
+   * globals defined (e.g., Electron main process, SSR hydration).
+   *
+   * **Using this flag in a real browser with an API key is a security
+   * vulnerability.** Your API key will be exposed to end users.
+   *
+   * @default false
+   */
+  dangerouslyAllowBrowser?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -104,6 +132,8 @@ export interface LoginData {
   email: string;
   password: string;
   remember_me?: boolean;
+  /** CAPTCHA token from the client-side widget (required when CAPTCHA is enabled). */
+  captcha_token?: string;
 }
 
 /** Data required to reset a forgotten password. */
@@ -111,6 +141,7 @@ export interface ResetPasswordData {
   token: string;
   email: string;
   password: string;
+  password_confirmation: string;
 }
 
 /** Data required to verify an MFA challenge during login. */
@@ -314,6 +345,8 @@ export interface OidcClient {
   logo_url: string | null;
   redirect_uris: string[];
   allowed_scopes: string[];
+  /** Grant types this client is allowed to use. */
+  allowed_grant_types?: string[];
   is_active: boolean;
   created_at: string;
   updated_at?: string;
@@ -433,8 +466,13 @@ export interface AuditLog {
 /** Filter parameters for listing audit logs. */
 export interface AuditLogFilters {
   action?: string;
+  user_id?: string;
   target_user_id?: string;
   target_role_id?: string;
+  from?: string;
+  to?: string;
+  page?: number;
+  per_page?: number;
   limit?: number;
 }
 
@@ -479,18 +517,60 @@ export interface OidcRefreshTokenParams {
   client_secret: string;
 }
 
+/** Parameters for an OIDC client_credentials token request (RFC 6749 Section 4.4). */
+export interface OidcClientCredentialsTokenParams {
+  grant_type: "client_credentials";
+  client_id: string;
+  client_secret: string;
+  scope?: string;
+}
+
+/** Parameters for an OIDC device_code token exchange (RFC 8628). */
+export interface OidcDeviceCodeTokenParams {
+  grant_type: "urn:ietf:params:oauth:grant-type:device_code";
+  device_code: string;
+  client_id: string;
+}
+
 /** Parameters for the OIDC token endpoint. */
 export type OidcTokenParams =
   | OidcAuthorizationCodeTokenParams
-  | OidcRefreshTokenParams;
+  | OidcRefreshTokenParams
+  | OidcClientCredentialsTokenParams
+  | OidcDeviceCodeTokenParams;
 
 /** Response from the OIDC token endpoint. */
 export interface OidcTokenResponse {
-  access_token?: string;
+  access_token: string;
   refresh_token?: string;
   token_type: string;
   expires_in: number;
-  id_token: string;
+  /** ID token (present for authorization_code grant, absent for client_credentials and device_code). */
+  id_token?: string;
+}
+
+/** Parameters for the OIDC device authorization request (RFC 8628). */
+export interface OidcDeviceAuthorizeParams {
+  client_id: string;
+  scope?: string;
+}
+
+/** Response from the OIDC device authorization endpoint. */
+export interface OidcDeviceAuthorizationResponse {
+  device_code: string;
+  user_code: string;
+  verification_uri: string;
+  verification_uri_complete?: string;
+  expires_in: number;
+  interval: number;
+}
+
+/** Parameters for building an OIDC logout URL. */
+export interface OidcLogoutParams {
+  /** The ID token previously issued, used as a logout hint. */
+  id_token_hint?: string;
+  /** URL to redirect the user to after logout. */
+  post_logout_redirect_uri?: string;
 }
 
 /** Claims returned by the OIDC userinfo endpoint. */
@@ -616,4 +696,131 @@ export interface WebhookEvent {
   event: string;
   timestamp: string;
   data: Record<string, unknown>;
+}
+
+// ---------------------------------------------------------------------------
+// Passkeys (WebAuthn)
+// ---------------------------------------------------------------------------
+
+/** Options returned from the server for a WebAuthn authentication ceremony. */
+export interface PasskeyAuthenticationOptions {
+  challenge: string;
+  timeout?: number;
+  rpId?: string;
+  allowCredentials?: Array<{
+    id: string;
+    type: string;
+    transports?: string[];
+  }>;
+  userVerification?: string;
+  [key: string]: unknown;
+}
+
+/** Data sent to verify a WebAuthn authentication assertion. */
+export interface PasskeyAuthenticateVerifyData {
+  id: string;
+  rawId: string;
+  response: {
+    authenticatorData: string;
+    clientDataJSON: string;
+    signature: string;
+    userHandle?: string;
+  };
+  type: string;
+}
+
+/** Options returned from the server for a WebAuthn registration ceremony. */
+export interface PasskeyRegistrationOptions {
+  challenge: string;
+  rp: { name: string; id?: string };
+  user: { id: string; name: string; displayName: string };
+  pubKeyCredParams: Array<{ type: string; alg: number }>;
+  timeout?: number;
+  attestation?: string;
+  authenticatorSelection?: {
+    authenticatorAttachment?: string;
+    residentKey?: string;
+    requireResidentKey?: boolean;
+    userVerification?: string;
+  };
+  excludeCredentials?: Array<{
+    id: string;
+    type: string;
+    transports?: string[];
+  }>;
+  [key: string]: unknown;
+}
+
+/** Data sent to verify a WebAuthn registration attestation. */
+export interface PasskeyRegisterVerifyData {
+  id: string;
+  rawId: string;
+  response: {
+    attestationObject: string;
+    clientDataJSON: string;
+  };
+  type: string;
+}
+
+/** A registered passkey credential record. */
+export interface PasskeyCredential {
+  id: string;
+  credential_id: string;
+  name: string | null;
+  last_used_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Fields that can be updated on a passkey credential. */
+export interface UpdatePasskeyData {
+  name?: string;
+}
+
+// ---------------------------------------------------------------------------
+// SAML SSO
+// ---------------------------------------------------------------------------
+
+/** Data required to initiate a SAML SSO flow. */
+export interface SamlInitiateData {
+  /** The ID of the SAML connection to use. */
+  connection_id?: string;
+  /** The user's email (for IdP discovery). */
+  email?: string;
+  /** Optional relay state passed through the SAML flow. */
+  relay_state?: string;
+}
+
+/** Response from initiating a SAML SSO flow. */
+export interface SamlInitiateResponse {
+  redirect_url: string;
+  request_id?: string;
+}
+
+/** A configured SAML identity provider connection. */
+export interface SamlConnection {
+  id: string;
+  name: string;
+  idp_entity_id: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// ---------------------------------------------------------------------------
+// User Attributes (ABAC)
+// ---------------------------------------------------------------------------
+
+/** A user attribute key-value record for ABAC. Returned as a flat key-value map. */
+export type UserAttribute = Record<string, unknown>;
+
+// ---------------------------------------------------------------------------
+// CAPTCHA
+// ---------------------------------------------------------------------------
+
+/** CAPTCHA configuration status for the application. */
+export interface CaptchaStatus {
+  enabled: boolean;
+  provider?: string;
+  site_key?: string;
 }

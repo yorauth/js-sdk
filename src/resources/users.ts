@@ -97,4 +97,20 @@ export class UserResource {
     );
     return response.data;
   }
+
+  /**
+   * Withdraw all consent grants for a user (GDPR Article 7(3)).
+   *
+   * Revokes any OIDC consent grants the user has previously approved.
+   *
+   * @param userId - The UUID of the user.
+   * @returns A confirmation message.
+   */
+  async withdrawConsent(userId: string): Promise<MessageResponse> {
+    const response = await this.http.request<{ data: MessageResponse }>(
+      "DELETE",
+      this.http.buildAppUrl(`users/${userId}/consent`),
+    );
+    return response.data;
+  }
 }

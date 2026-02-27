@@ -38,6 +38,8 @@ export class ApiKeyResource {
    * The plaintext key is returned **only once** in the response.
    * Store it securely -- it cannot be retrieved again.
    *
+   * @security Store the returned API key securely — it is shown only once and cannot be retrieved later.
+   *
    * @param data - Optional key name and expiration date.
    * @returns The created API key including the one-time plaintext key.
    */

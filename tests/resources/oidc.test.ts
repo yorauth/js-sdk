@@ -260,8 +260,8 @@ describe('OidcResource', () => {
         code_verifier: 'verifier_abc',
       });
 
-      const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
-      expect(callBody.code_verifier).toBe('verifier_abc');
+      const callBody = new URLSearchParams(mockFetch.mock.calls[0][1].body);
+      expect(callBody.get('code_verifier')).toBe('verifier_abc');
     });
 
     it('should handle invalid code error', async () => {

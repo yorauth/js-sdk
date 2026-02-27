@@ -7,8 +7,13 @@ import type { TokenRefreshResult } from "./types.js";
 
 /** Options accepted by the internal HTTP client request method. */
 export interface HttpRequestOptions {
-  /** JSON-serializable request body. */
+  /** JSON-serializable request body. Sent as `application/json`. */
   body?: unknown;
+  /**
+   * Form-encoded request body. Sent as `application/x-www-form-urlencoded`.
+   * Required for RFC 6749 token endpoints.
+   */
+  formBody?: Record<string, string | undefined>;
   /** URL query parameters (will be appended to the URL). */
   params?: Record<string, string | number | boolean | undefined>;
   /** Extra headers to merge with defaults. */
@@ -50,7 +55,6 @@ export class HttpClient {
   private readonly getApiKey: () => string | undefined;
   private readonly getRefreshToken: () => string | undefined;
   private readonly onRefreshSuccess: (result: TokenRefreshResult) => void;
-  private isRefreshing = false;
   private refreshPromise: Promise<TokenRefreshResult> | null = null;
 
   constructor(config: HttpClientConfig) {
@@ -163,7 +167,19 @@ export class HttpClient {
       ...options?.headers,
     };
 
-    if (options?.body !== undefined) {
+    // Determine body and content-type
+    let requestBody: string | URLSearchParams | undefined;
+    if (options?.formBody !== undefined) {
+      const params = new URLSearchParams();
+      for (const [key, value] of Object.entries(options.formBody)) {
+        if (value !== undefined) {
+          params.append(key, value);
+        }
+      }
+      requestBody = params;
+      headers["Content-Type"] = "application/x-www-form-urlencoded";
+    } else if (options?.body !== undefined) {
+      requestBody = JSON.stringify(options.body);
       headers["Content-Type"] = "application/json";
     }
 
@@ -184,7 +200,7 @@ export class HttpClient {
       const response = await fetch(urlObj.toString(), {
         method,
         headers,
-        body: options?.body !== undefined ? JSON.stringify(options.body) : undefined,
+        body: requestBody,
         signal: controller.signal,
       });
 
@@ -240,13 +256,11 @@ export class HttpClient {
       return this.refreshPromise;
     }
 
-    this.isRefreshing = true;
     this.refreshPromise = this.doRefresh();
 
     try {
       return await this.refreshPromise;
     } finally {
-      this.isRefreshing = false;
       this.refreshPromise = null;
     }
   }

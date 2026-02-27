@@ -4,23 +4,40 @@ Official TypeScript SDK for the **YorAuth Authentication & Authorization Platfor
 
 Zero runtime dependencies. Uses native `fetch`. Ships ESM + CJS dual builds with full type declarations.
 
+> **SECURITY WARNING: SERVER-SIDE USE ONLY**
+>
+> This SDK is designed exclusively for server-side environments (Node.js, Deno, Bun).
+> **DO NOT** use this SDK in browser, frontend, or any client-side JavaScript environment.
+>
+> The SDK authenticates using API keys and JWT tokens that grant access to your
+> YorAuth application data. Exposing these credentials in client-side code, browser
+> bundles, or publicly accessible JavaScript will compromise your application security
+> and may result in unauthorized access to user data.
+>
+> For browser/frontend integration, use `@yorauth/vue-sdk` (Nuxt.js) or
+> `@yorauth/react-sdk` (Next.js), which are designed for SSR frameworks that
+> keep secrets on the server.
+>
+> **YorAuth assumes no liability for credential exposure resulting from use of this
+> SDK in client-side or browser environments.** See [Security Best Practices](https://docs.yorauth.com/security-best-practices).
+
 ## Installation
 
 ```bash
 npm install @yorauth/js-sdk
 ```
 
-Requires Node.js 18+ (for native `fetch` support) or a browser environment.
+Requires Node.js 18+, Deno, or Bun.
 
 ## Quick Start
 
 ```typescript
 import { YorAuth } from "@yorauth/js-sdk";
 
-// Initialize the client with your application ID
+// Initialize the client with your application ID and base URL
 const yorauth = new YorAuth({
   applicationId: "your-application-uuid",
-  baseUrl: "https://api.yorauth.dev", // optional, this is the default
+  baseUrl: process.env.YORAUTH_BASE_URL!, // required, no default
 });
 
 // Register a new user
@@ -80,14 +97,21 @@ yorauth.setToken("eyJhbGciOiJSUzI1NiI...");
 
 Alternative authentication for server-to-server integrations.
 
+> **WARNING:** API keys are long-lived credentials with full application access.
+> Never expose API keys in browser code, frontend bundles, mobile apps, or any
+> environment accessible to end users. API key authentication is intended
+> exclusively for server-side backends, CI/CD pipelines, and internal services.
+
 ```typescript
+// SERVER-SIDE ONLY -- e.g., Node.js backend, serverless function, CLI tool
 const yorauth = new YorAuth({
   applicationId: "your-app-uuid",
-  apiKey: "ya_live_abc123...", // set at construction
+  baseUrl: process.env.YORAUTH_BASE_URL!,
+  apiKey: process.env.YORAUTH_API_KEY!, // Load from environment variable, NEVER hardcode
 });
 
 // Or set/update later
-yorauth.setApiKey("ya_live_abc123...");
+yorauth.setApiKey(process.env.YORAUTH_API_KEY!);
 ```
 
 If both a JWT token and API key are configured, the JWT token takes priority.
@@ -443,6 +467,124 @@ const userEvents = await yorauth.auditLogs.list({
 });
 ```
 
+### `yorauth.passkeys` -- Passkey (WebAuthn) Authentication
+
+Authentication ceremonies are public. Credential management requires JWT + user ownership.
+
+```typescript
+// Passwordless login with a passkey
+const options = await yorauth.passkeys.authenticateOptions();
+// Pass options to navigator.credentials.get() in the browser
+const credential = await navigator.credentials.get({ publicKey: options });
+const authResult = await yorauth.passkeys.authenticateVerify(credential);
+yorauth.setToken(authResult.access_token);
+
+// Register a new passkey (authenticated)
+const regOptions = await yorauth.passkeys.registerOptions("user-uuid");
+const newCred = await navigator.credentials.create({ publicKey: regOptions });
+await yorauth.passkeys.registerVerify("user-uuid", newCred);
+
+// List, update, and delete passkeys
+const passkeys = await yorauth.passkeys.list("user-uuid");
+await yorauth.passkeys.update("user-uuid", "credential-id", { name: "My Laptop" });
+await yorauth.passkeys.delete("user-uuid", "credential-id");
+```
+
+### `yorauth.saml` -- SAML SSO
+
+Public endpoints for SAML single sign-on.
+
+```typescript
+// List available SAML connections
+const connections = await yorauth.saml.getConnections();
+
+// Initiate SAML login
+const saml = await yorauth.saml.initiate({
+  connection_id: "connection-uuid",
+  relay_state: "https://app.example.com/dashboard",
+});
+// Redirect user to saml.redirect_url
+```
+
+### `yorauth.userAttributes` -- User Attributes (ABAC)
+
+Requires JWT authentication. Read requires `attributes:read`, write/delete require `attributes:manage`.
+
+```typescript
+// Get all attributes for a user
+const attrs = await yorauth.userAttributes.get("user-uuid");
+
+// Set attributes (merges with existing)
+await yorauth.userAttributes.set("user-uuid", {
+  department: "engineering",
+  clearance_level: "secret",
+});
+
+// Delete a specific attribute
+await yorauth.userAttributes.delete("user-uuid", "clearance_level");
+```
+
+### OIDC Device Authorization (RFC 8628)
+
+For devices without browsers (TVs, CLIs, IoT).
+
+```typescript
+// Start device authorization flow
+const device = await yorauth.oidc.deviceAuthorize({
+  client_id: "client-id",
+  scope: "openid profile",
+});
+// Display device.user_code and device.verification_uri to user
+
+// Poll for token (device client)
+const tokens = await yorauth.oidc.deviceCodeToken({
+  grant_type: "urn:ietf:params:oauth:grant-type:device_code",
+  device_code: device.device_code,
+  client_id: "client-id",
+});
+```
+
+### OIDC Client Credentials (RFC 6749 Section 4.4)
+
+Service-to-service authentication without user context.
+
+```typescript
+const tokens = await yorauth.oidc.clientCredentialsToken({
+  grant_type: "client_credentials",
+  client_id: "client-id",
+  client_secret: "client-secret",
+  scope: "api:read",
+});
+```
+
+### OIDC Logout
+
+```typescript
+// Build RP-Initiated Logout URL
+const logoutUrl = yorauth.oidc.buildLogoutUrl({
+  id_token_hint: "id-token",
+  post_logout_redirect_uri: "https://app.example.com",
+});
+// Redirect user to logoutUrl
+```
+
+### CAPTCHA Status
+
+```typescript
+// Check if CAPTCHA is enabled for this application
+const captcha = await yorauth.auth.getCaptchaStatus();
+if (captcha.enabled) {
+  console.log(captcha.provider, captcha.site_key);
+}
+```
+
+### Consent Withdrawal (GDPR)
+
+```typescript
+// Withdraw consent and delete all user data (irreversible)
+await yorauth.users.withdrawConsent("user-uuid");
+```
+
 ## Error Handling
 
 All API errors throw a `YorAuthError` with structured information:
@@ -506,11 +648,17 @@ import type {
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `applicationId` | `string` | **required** | Your YorAuth application UUID |
-| `baseUrl` | `string` | `"https://api.yorauth.dev"` | API base URL |
+| `baseUrl` | `string` | **required** | API base URL (e.g. `process.env.YORAUTH_BASE_URL`) |
 | `token` | `string` | `undefined` | JWT Bearer token |
-| `apiKey` | `string` | `undefined` | API key for server-to-server auth |
+| `apiKey` | `string` | `undefined` | **SERVER-SIDE ONLY.** API key for server-to-server auth. Never expose in client-side code. |
+| `refreshToken` | `string` | `undefined` | Refresh token for automatic token refresh on 401 |
 | `timeout` | `number` | `30000` | Request timeout in milliseconds |
+| `dangerouslyAllowBrowser` | `boolean` | `false` | Override browser detection safety check. Only for Electron or SSR hydration contexts. |
 
 ## License
 
 MIT
+
+## Security
+
+For security concerns, responsible disclosure, and best practices for credential management, see [SECURITY.md](./SECURITY.md) and our [Security Best Practices](https://docs.yorauth.com/security-best-practices) documentation.

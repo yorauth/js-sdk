@@ -181,12 +181,12 @@ export class TeamResource {
    *
    * @param teamId - The UUID of the team.
    * @param roleId - The UUID of the role to remove.
+   * @param scope - Optional scope to target a specific scoped assignment.
    */
-  async removeTeamRole(teamId: string, roleId: string): Promise<void> {
-    await this.http.request<void>(
-      "DELETE",
-      this.http.buildAppUrl(`teams/${teamId}/roles/${roleId}`),
-    );
+  async removeTeamRole(teamId: string, roleId: string, scope?: string): Promise<void> {
+    await this.http.request<void>("DELETE", this.http.buildAppUrl(`teams/${teamId}/roles/${roleId}`), {
+      params: scope ? { scope } : undefined,
+    });
   }
 
   /**

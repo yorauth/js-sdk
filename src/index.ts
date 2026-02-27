@@ -7,7 +7,7 @@
  * ```ts
  * import { YorAuth } from "@yorauth/js-sdk";
  *
- * const client = new YorAuth({ applicationId: "your-app-uuid" });
+ * const client = new YorAuth({ applicationId: "your-app-uuid", baseUrl: process.env.YORAUTH_BASE_URL! });
  * ```
  */
 
@@ -83,9 +83,14 @@ export type {
   OidcAuthorizeResponse,
   OidcAuthorizationCodeTokenParams,
   OidcRefreshTokenParams,
+  OidcClientCredentialsTokenParams,
+  OidcDeviceCodeTokenParams,
   OidcTokenParams,
   OidcTokenResponse,
   OidcUserInfo,
+  OidcDeviceAuthorizeParams,
+  OidcDeviceAuthorizationResponse,
+  OidcLogoutParams,
 
   // Webhooks
   WebhookConfig,
@@ -102,6 +107,25 @@ export type {
   // Audit Logs
   AuditLog,
   AuditLogFilters,
+
+  // Passkeys
+  PasskeyAuthenticationOptions,
+  PasskeyAuthenticateVerifyData,
+  PasskeyRegistrationOptions,
+  PasskeyRegisterVerifyData,
+  PasskeyCredential,
+  UpdatePasskeyData,
+
+  // SAML
+  SamlInitiateData,
+  SamlInitiateResponse,
+  SamlConnection,
+
+  // User Attributes
+  UserAttribute,
+
+  // CAPTCHA
+  CaptchaStatus,
 
   // Teams
   Team,
@@ -128,3 +152,6 @@ export { WebhookResource } from "./resources/webhooks.js";
 export { ApiKeyResource } from "./resources/api-keys.js";
 export { AuditLogResource } from "./resources/audit-logs.js";
 export { TeamResource } from "./resources/teams.js";
+export { PasskeyResource } from "./resources/passkeys.js";
+export { SamlResource } from "./resources/saml.js";
+export { UserAttributeResource } from "./resources/user-attributes.js";
