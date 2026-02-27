@@ -47,10 +47,10 @@
   ],
   "author": "YorAuth Team",
   "license": "MIT",
-  "publishConfig": { "access": "public" },
+  "publishConfig": { "access": "public", "provenance": true },
   "repository": {
     "type": "git",
-    "url": "https://github.com/yorauth/js-sdk"
+    "url": "git+https://github.com/yorauth/js-sdk.git"
   },
   "engines": {
     "node": ">=18.0.0"
