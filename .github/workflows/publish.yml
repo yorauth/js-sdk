@@ -91,13 +91,20 @@ jobs:
 
       - name: Publish Release
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ''
           DIST_TAG: ${{ steps.version.outputs.dist_tag }}
         run: npm publish --provenance --access public --ignore-scripts --tag "${DIST_TAG}"
 
       - name: Verify publish
         env:
           PKG_VERSION: ${{ steps.version.outputs.version }}
+          NODE_AUTH_TOKEN: ""
         run: |
-          sleep 5
-          npm view "@yorauth/js-sdk@${PKG_VERSION}" version
+          for i in 1 2 3; do
+            sleep 10
+            if npm view "@yorauth/js-sdk@${PKG_VERSION}" version 2>/dev/null; then
+              exit 0
+            fi
+            echo "Attempt $i: not yet propagated, retrying..."
+          done
+          echo "::warning::Package not yet visible on registry after 30s (may still be propagating)"
