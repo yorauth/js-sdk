@@ -93,7 +93,12 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ''
           DIST_TAG: ${{ steps.version.outputs.dist_tag }}
-        run: npm publish --provenance --access public --ignore-scripts --tag "${DIST_TAG}"
+          PKG_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          npm publish --provenance --access public --ignore-scripts --tag "${DIST_TAG}"
+          if [ "${DIST_TAG}" != "latest" ]; then
+            npm dist-tag add "@yorauth/js-sdk@${PKG_VERSION}" latest
+          fi
 
       - name: Verify publish
         env:
