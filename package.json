@@ -1,6 +1,6 @@
 {
   "name": "@yorauth/js-sdk",
-  "version": "1.0.0-alpha.1.1",
+  "version": "0.0.0-development",
   "description": "Official server-side TypeScript SDK for the YorAuth Authentication & Authorization Platform. For Node.js, Deno, and Bun -- not for browser use.",
   "type": "module",
   "main": "./dist/index.cjs",

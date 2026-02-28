@@ -1,12 +1,18 @@
-name: Publish to npm
+name: Publish Release
 
 on:
-  workflow_dispatch:
+  release:
+    types: [published]
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
 
 jobs:
   publish:
     name: Publish
     runs-on: ubuntu-latest
+    if: startsWith(github.event.release.tag_name, 'v')
 
     permissions:
       contents: read
@@ -15,15 +21,64 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Extract version and dist-tag
+        id: version
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          VERSION="${TAG#v}"
+
+          if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+(\.[a-zA-Z0-9]+)*)?$'; then
+            echo "::error::Tag is not valid semver: '$VERSION'"
+            exit 1
+          fi
+
+          if [ "$VERSION" = "0.0.0-development" ]; then
+            echo "::error::Cannot publish sentinel version '0.0.0-development'"
+            exit 1
+          fi
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+          if echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            DIST_TAG="latest"
+          else
+            PRERELEASE="${VERSION#*-}"
+            DIST_TAG="${PRERELEASE%%.*}"
+          fi
+
+          echo "dist_tag=$DIST_TAG" >> "$GITHUB_OUTPUT"
+          echo "### Publishing \`@yorauth/js-sdk@$VERSION\` → dist-tag \`$DIST_TAG\`" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '24'
           registry-url: 'https://registry.npmjs.org'
+          cache: 'npm'
+
+      - name: Check for duplicate version
+        env:
+          PKG_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if npm view "@yorauth/js-sdk@${PKG_VERSION}" version 2>/dev/null; then
+            echo "::error::Version ${PKG_VERSION} is already published to npm"
+            exit 1
+          fi
+
+      - name: Set version
+        env:
+          PKG_VERSION: ${{ steps.version.outputs.version }}
+        run: npm version "${PKG_VERSION}" --no-git-tag-version
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
 
       - name: Run tests
         run: npm test
@@ -31,7 +86,18 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Publish to npm
-        run: npm publish --provenance --access public --tag latest
+      - name: Verify package contents
+        run: npm pack --dry-run | tee "$GITHUB_STEP_SUMMARY"
+
+      - name: Publish Release
         env:
-          NODE_AUTH_TOKEN: ''
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          DIST_TAG: ${{ steps.version.outputs.dist_tag }}
+        run: npm publish --provenance --access public --ignore-scripts --tag "${DIST_TAG}"
+
+      - name: Verify publish
+        env:
+          PKG_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          sleep 5
+          npm view "@yorauth/js-sdk@${PKG_VERSION}" version
